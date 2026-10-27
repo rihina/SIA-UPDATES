@@ -1,0 +1,34 @@
+{% extends 'InvApp/base.html' %}
+
+{% block title %}My Requests · E-Library{% endblock %}
+
+{% block content %}
+<h1 class="lms-title">My book requests</h1>
+<p class="lms-subtitle">Track requests submitted to the library.</p>
+
+<section class="lms-card member-directory">
+    <div class="card-title">Request history <span class="badge-pill badge-violet ms-auto">{{ requests|length }}</span></div>
+    <div class="table-wrap">
+        <table class="lms-table">
+            <thead><tr><th>Book</th><th>Author</th><th>Requested</th><th>Status</th><th>Updated</th></tr></thead>
+            <tbody>
+                {% for request in requests %}
+                <tr>
+                    <td><strong>{{ request.book.book_name }}</strong></td>
+                    <td>{{ request.book.author }}</td>
+                    <td>{{ request.requested_at|date:"M d, Y h:i A" }}</td>
+                    <td>
+                        {% if request.status == 'approved' %}<span class="badge-pill badge-available">Approved</span>
+                        {% elif request.status == 'rejected' %}<span class="badge-pill badge-overdue">Declined</span>
+                        {% else %}<span class="badge-pill badge-violet">Pending</span>{% endif %}
+                    </td>
+                    <td>{{ request.resolved_at|date:"M d, Y h:i A"|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="empty-state">No book requests yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

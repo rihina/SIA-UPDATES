@@ -1,0 +1,55 @@
+#header {
+    background: #2d0814;
+    color: #f5f8f8;
+}
+
+#header a:link,
+#header a:visited {
+    color: #f5f8f8;
+}
+
+div.breadcrumbs {
+    background: #a83252;
+}
+
+a:link,
+a:visited {
+    color: #b53f61;
+}
+
+a:hover {
+    color: #7a243e;
+}
+
+.module h2,
+.module caption,
+.inline-group h2 {
+    background: #fff0f3;
+    color: #4b1020;
+    border-left: 3px solid #ed4f70;
+}
+
+.button,
+input[type="submit"],
+input[type="button"],
+.submit-row input,
+a.button {
+    background: #ed4f70;
+    color: #fff;
+}
+
+.button:hover,
+input[type="submit"]:hover,
+input[type="button"]:hover,
+.submit-row input:hover,
+a.button:hover {
+    background: #d63c60;
+    color: #fff;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: #ed4f70 !important;
+    outline-color: #ed4f70;
+}

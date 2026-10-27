@@ -1,0 +1,60 @@
+{% extends 'InvApp/base.html' %}
+{% load static %}
+
+{% block title %}{% if staff_login %}Staff Login{% else %}Login{% endif %} · E-Library{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+    <div class="auth-card">
+        <img src="{% static 'CCTC_logo.png' %}" alt="CCTC Logo" class="auth-logo">
+        <h1>{% if staff_login %}Staff sign in{% else %}Welcome back{% endif %}</h1>
+        <p class="auth-sub">{% if staff_login %}Sign in to manage the library{% else %}Sign in to browse, borrow and track books{% endif %}</p>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="form-field">
+                <label for="{{ form.username.id_for_label }}">Username</label>
+                {{ form.username }}
+                {% for error in form.username.errors %}
+                <ul class="error-list">
+                    <li>{{ error }}</li>
+                </ul>
+                {% endfor %}
+            </div>
+
+            <div class="form-field">
+                <label for="{{ form.password.id_for_label }}">Password</label>
+                {{ form.password }}
+                {% for error in form.password.errors %}
+                <ul class="error-list">
+                    <li>{{ error }}</li>
+                </ul>
+                {% endfor %}
+            </div>
+
+            <label class="remember-me" for="remember_me">
+                <input type="checkbox" id="remember_me" name="remember_me" {% if remember_me %}checked{% endif %}>
+                <span>Remember me</span>
+            </label>
+
+            {% if form.non_field_errors %}
+            <ul class="error-list" style="margin-bottom:14px;">
+                {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+
+            <button type="submit" class="btn-pill">Sign in</button>
+        </form>
+
+        {% if staff_login %}
+        <p class="auth-alt">Library staff? <a href="{% url 'register' %}">Create a staff account</a></p>
+        {% else %}
+        <p class="auth-alt">No account yet? <a href="{% url 'register' %}">Create one</a></p>
+        <p class="auth-staff-link">Library staff? <a href="{% url 'staff_login' %}">Sign in here</a></p>
+        {% endif %}
+        </div>
+</div>
+{% endblock %}

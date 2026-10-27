@@ -1,0 +1,95 @@
+{% extends 'InvApp/base.html' %}
+
+{% block title %}My Borrowed Books · E-Library{% endblock %}
+
+{% block content %}
+
+<h1 class="lms-title">My Borrowed Books</h1>
+<p class="lms-subtitle">
+    Active loans with a 7-day loan period ·
+    <time class="now-note">now: {{ now|date:"M d, Y h:i A" }}</time>
+</p>
+
+<div class="lms-card">
+    <div class="card-title">Active Loans <span class="badge-pill badge-violet ms-auto">{{ active|length }}</span></div>
+
+    <div class="table-wrap">
+        <table class="lms-table">
+            <thead>
+                <tr>
+                    <th>Book</th>
+                    <th>Author</th>
+                    <th>Borrow Date &amp; Time</th>
+                    <th>Due Date &amp; Time</th>
+                    <th>Status</th>
+                    <th style="text-align:right;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in active %}
+                <tr>
+                    <td><strong>{{ record.book.book_name }}</strong></td>
+                    <td>{{ record.book.author }}</td>
+                    <td>{{ record.borrowed_at|date:"M d, Y h:i A" }}</td>
+                    <td>{{ record.due_by|date:"M d, Y h:i A" }}</td>
+                    <td>
+                        {% if record.is_overdue %}
+                        <span class="badge-pill badge-overdue">Overdue</span>
+                        {% else %}
+                        <span class="badge-pill badge-available">On loan</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align:right;">
+                        <form method="POST" action="{% url 'return_book' %}" style="display:inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="record_id" value="{{ record.pk }}">
+                            <button type="submit" class="btn-pill btn-sm btn-pink">Return</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="empty-state">
+                        You have no active loans. Browse the
+                        <a href="{% url 'book_list' %}" style="color:var(--primary);font-weight:700;">catalog</a>
+                        to borrow a book.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="lms-card">
+    <div class="card-title">Return History <span class="badge-pill badge-violet ms-auto">{{ history|length }}</span></div>
+
+    <div class="table-wrap">
+        <table class="lms-table">
+            <thead>
+                <tr>
+                    <th>Book</th>
+                    <th>Borrowed</th>
+                    <th>Due By</th>
+                    <th>Returned</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in history %}
+                <tr>
+                    <td><strong>{{ record.book.book_name }}</strong></td>
+                    <td>{{ record.borrowed_at|date:"M d, Y h:i A" }}</td>
+                    <td>{{ record.due_by|date:"M d, Y h:i A" }}</td>
+                    <td><span class="badge-pill badge-available">{{ record.returned_at|date:"M d, Y h:i A" }}</span></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="empty-state">No previous loans yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

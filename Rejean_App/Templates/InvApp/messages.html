@@ -1,0 +1,39 @@
+{% extends 'InvApp/base.html' %}
+
+{% block title %}Messages · E-Library{% endblock %}
+
+{% block content %}
+<h1 class="lms-title">Messages</h1>
+<p class="lms-subtitle">Updates from your library staff.</p>
+
+<section class="lms-card member-directory">
+    <div class="card-title">Inbox <span class="badge-pill badge-violet ms-auto">{{ inbox|length }}</span></div>
+    <div class="table-wrap">
+        <table class="lms-table">
+            <thead><tr><th>Subject</th><th>From</th><th>Message</th><th>Received</th><th>Status</th></tr></thead>
+            <tbody>
+                {% for message in inbox %}
+                <tr>
+                    <td><strong>{{ message.subject }}</strong></td>
+                    <td>{{ message.sender.get_full_name|default:message.sender.username }}</td>
+                    <td class="message-body-cell">{{ message.body|linebreaksbr }}</td>
+                    <td>{{ message.sent_at|date:"M d, Y h:i A" }}</td>
+                    <td>
+                        {% if message.read_at %}
+                        <span class="badge-pill badge-available">Read</span>
+                        {% else %}
+                        <form method="POST" action="{% url 'mark_message_read' message.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-pill btn-sm">Mark read</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="empty-state">No messages yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

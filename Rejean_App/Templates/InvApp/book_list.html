@@ -1,0 +1,313 @@
+{% extends 'InvApp/base.html' %}
+{% load static %}
+
+{% block title %}Book Catalog · E-Library{% endblock %}
+
+{% block topbar %}
+<label class="catalog-search">
+    <span class="search-mark" aria-hidden="true"></span>
+    <input id="bookSearch" type="search" placeholder="Search books, authors, genres" aria-label="Search books">
+</label>
+{% endblock %}
+
+{% block content %}
+<section class="catalog-heading">
+    <div>
+        <span class="eyebrow">YOUR CAMPUS COLLECTION</span>
+        <h1>Discover books</h1>
+        <p>{% if request.user.is_staff_role %}Manage titles and availability across the library.{% else %}Find a book to borrow and keep track of your reading.{% endif %}</p>
+    </div>
+    {% if request.user.is_staff_role %}
+    <button type="button" class="btn-pill add-book-button" onclick="openBookModal()">+ Add book</button>
+    {% endif %}
+</section>
+
+<section class="collection-strip" aria-label="Collection summary">
+    <div><span>CATALOG</span><strong>{{ books|length }} <small>titles</small></strong></div>
+    <div class="collection-divider"></div>
+    <div><span>ON THE SHELF</span><strong>{{ available_count }} <small>available</small></strong></div>
+</section>
+
+<div class="genre-filter" role="group" aria-label="Filter books by genre">
+    <button type="button" class="genre-chip active" data-genre-filter="all" aria-pressed="true">All books</button>
+    {% for genre in genres %}
+    <button type="button" class="genre-chip" data-genre-filter="{{ genre|lower }}" aria-pressed="false">{{ genre }}</button>
+    {% endfor %}
+</div>
+
+<div class="book-browser">
+    <section class="book-shelf" aria-label="Book catalog">
+        <div class="shelf-heading">
+            <div>
+                <h2>All titles</h2>
+                <p>Choose a book to see its details</p>
+            </div>
+            <span class="result-count" id="resultCount">{{ books|length }} books</span>
+        </div>
+
+        <div class="book-grid" id="bookGrid">
+            {% for book in books %}
+            <article class="book-tile{% if forloop.first %} selected{% endif %}" data-book-card
+                data-id="{{ book.book_id }}" data-title="{{ book.book_name }}" data-author="{{ book.author }}"
+                data-genre="{{ book.genre|lower }}" data-search="{{ book.book_name|lower }} {{ book.author|lower }} {{ book.genre|lower }}"
+                data-status="{{ book.availability }}" data-requested="{% if book.book_id in pending_request_book_ids %}true{% else %}false{% endif %}">
+                <button type="button" class="book-select" data-select-book aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}">
+                    <span class="book-cover">
+                        <span class="cover-genre">{{ book.genre }}</span>
+                        <span class="cover-title">{{ book.book_name }}</span>
+                        <span class="cover-rule"></span>
+                        <span class="cover-author">{{ book.author }}</span>
+                    </span>
+                    <span class="book-card-meta">
+                        <strong>{{ book.book_name }}</strong>
+                        <span>{{ book.author }}</span>
+                        <span class="book-status {% if book.is_available %}is-available{% else %}is-unavailable{% endif %}">{{ book.availability }}</span>
+                    </span>
+                </button>
+                {% if request.user.is_staff_role %}
+                <div class="book-card-actions">
+                    <button type="button" class="text-action" data-edit-book data-id="{{ book.book_id }}"
+                        data-title="{{ book.book_name }}" data-author="{{ book.author }}" data-genre="{{ book.genre }}"
+                        data-status="{{ book.availability }}">Edit</button>
+                    <form method="POST" action="{% url 'book_delete' book.book_id %}"
+                        onsubmit="return confirm('Delete &quot;{{ book.book_name }}&quot;?');">
+                        {% csrf_token %}
+                        <button type="submit" class="text-action delete-action">Delete</button>
+                    </form>
+                </div>
+                {% endif %}
+            </article>
+            {% empty %}
+            <p class="empty-state catalog-empty">No books in the catalog yet.</p>
+            {% endfor %}
+        </div>
+        <p class="empty-state no-results" id="noResults" hidden>No books match your search.</p>
+    </section>
+
+    <aside class="book-detail-panel" aria-live="polite" aria-label="Selected book details">
+        <span class="detail-kicker">SELECTED TITLE</span>
+        {% if selected_book %}
+        <span class="detail-status {% if selected_book.is_available %}is-available{% else %}is-unavailable{% endif %}" id="detailStatus">{{ selected_book.availability }}</span>
+        <h2 id="detailTitle">{{ selected_book.book_name }}</h2>
+        <p class="detail-author" id="detailAuthor">{{ selected_book.author }}</p>
+        <dl class="detail-list">
+            <div><dt>Genre</dt><dd id="detailGenre">{{ selected_book.genre }}</dd></div>
+            <div><dt>Catalog ID</dt><dd id="detailId">#{{ selected_book.book_id }}</dd></div>
+        </dl>
+        {% if not request.user.is_staff_role %}
+        <form method="POST" action="{% url 'borrow_book' %}" class="detail-borrow-form" id="detailBorrowForm" {% if not selected_book.is_available %}hidden{% endif %}>
+            {% csrf_token %}
+            <input type="hidden" name="book_id" id="detailBookId" value="{{ selected_book.book_id }}">
+            <button type="submit" class="btn-pill detail-borrow" id="detailBorrow">
+                Borrow this book
+            </button>
+        </form>
+        <form method="POST" action="{% url 'book_request' %}" class="detail-borrow-form" id="detailRequestForm" {% if selected_book.is_available or selected_book.book_id in pending_request_book_ids %}hidden{% endif %}>
+            {% csrf_token %}
+            <input type="hidden" name="book_id" id="requestBookId" value="{{ selected_book.book_id }}">
+            <button type="submit" class="btn-pill detail-borrow detail-request">Request this book</button>
+        </form>
+        <p class="detail-note request-pending-note" id="requestPendingNote" {% if selected_book.is_available or selected_book.book_id not in pending_request_book_ids %}hidden{% endif %}>Your request is pending with library staff.</p>
+        {% else %}
+        <p class="detail-note">Manage this title from its card in the catalog.</p>
+        {% endif %}
+        {% else %}
+        <h2 id="detailTitle">No titles yet</h2>
+        <p class="detail-author">The catalog is empty.</p>
+        {% endif %}
+    </aside>
+</div>
+
+{% if request.user.is_staff_role %}
+<dialog class="book-modal" id="bookModal" aria-labelledby="bookModalTitle">
+    <div class="book-modal-content">
+        <header class="book-modal-header">
+            <h2 class="book-modal-title" id="bookModalTitle">Add Book</h2>
+            <button type="button" class="book-modal-close" data-modal-close aria-label="Close">&times;</button>
+        </header>
+
+        <div class="book-modal-body">
+                <form method="POST" id="bookForm" action="{% url 'book_add' %}">
+                    {% csrf_token %}
+
+                    <div class="form-field">
+                        <label for="{{ form.book_name.id_for_label }}">Book Name</label>
+                        {{ form.book_name }}
+                        {% for error in form.book_name.errors %}
+                        <ul class="error-list">
+                            <li>{{ error }}</li>
+                        </ul>
+                        {% endfor %}
+                    </div>
+
+                    <div class="form-field">
+                        <label for="{{ form.author.id_for_label }}">Author</label>
+                        {{ form.author }}
+                        {% for error in form.author.errors %}
+                        <ul class="error-list">
+                            <li>{{ error }}</li>
+                        </ul>
+                        {% endfor %}
+                    </div>
+
+                    <div class="form-field">
+                        <label for="{{ form.genre.id_for_label }}">Genre</label>
+                        {{ form.genre }}
+                        {% for error in form.genre.errors %}
+                        <ul class="error-list">
+                            <li>{{ error }}</li>
+                        </ul>
+                        {% endfor %}
+                    </div>
+
+                    <div class="form-field">
+                        <label for="{{ form.availability.id_for_label }}">Availability</label>
+                        {{ form.availability }}
+                        {% for error in form.availability.errors %}
+                        <ul class="error-list">
+                            <li>{{ error }}</li>
+                        </ul>
+                        {% endfor %}
+                    </div>
+
+                    <div class="book-form-actions">
+                        <button type="button" class="btn-pill btn-soft" data-modal-close>Cancel</button>
+                        <button type="submit" class="btn-pill">Save Book</button>
+                    </div>
+                </form>
+        </div>
+    </div>
+</dialog>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+{% if request.user.is_staff_role %}
+<script>
+    const addUrl = "{% url 'book_add' %}";
+    const editUrlTemplate = (id) => `/books/${id}/edit/`;
+
+    function openBookModal(bookId, name, author, genre, availability) {
+        const form = document.getElementById('bookForm');
+        const title = document.getElementById('bookModalTitle');
+
+        if (bookId) {
+            title.textContent = 'Edit Book';
+            form.action = editUrlTemplate(bookId);
+            form.book_name.value = name;
+            form.author.value = author;
+            form.genre.value = genre;
+            form.availability.value = availability;
+        } else {
+            title.textContent = 'Add Book';
+            form.action = addUrl;
+            form.reset();
+        }
+
+        document.getElementById('bookModal').showModal();
+    }
+
+    document.querySelectorAll('[data-edit-book]').forEach((button) => {
+        button.addEventListener('click', () => {
+            openBookModal(button.dataset.id, button.dataset.title, button.dataset.author, button.dataset.genre, button.dataset.status);
+        });
+    });
+
+    document.querySelectorAll('[data-modal-close]').forEach((button) => {
+        button.addEventListener('click', () => document.getElementById('bookModal').close());
+    });
+
+    {% if edit_book %}
+    document.addEventListener('DOMContentLoaded', () => {
+        openBookModal(
+            '{{ edit_book.book_id }}',
+            '{{ edit_book.book_name|escapejs }}',
+            '{{ edit_book.author|escapejs }}',
+            '{{ edit_book.genre|escapejs }}',
+            '{{ edit_book.availability }}'
+        );
+    });
+    {% endif %}
+    {% if show_add_book %}
+    document.addEventListener('DOMContentLoaded', () => openBookModal());
+    {% endif %}
+</script>
+{% endif %}
+<script>
+    const bookCards = [...document.querySelectorAll('[data-book-card]')];
+    const searchInput = document.getElementById('bookSearch');
+    const genreFilters = [...document.querySelectorAll('[data-genre-filter]')];
+    const resultCount = document.getElementById('resultCount');
+    const noResults = document.getElementById('noResults');
+    let selectedGenre = 'all';
+
+    function selectBook(card) {
+        bookCards.forEach((item) => {
+            const selected = item === card;
+            item.classList.toggle('selected', selected);
+            item.querySelector('[data-select-book]').setAttribute('aria-pressed', String(selected));
+        });
+
+        document.getElementById('detailTitle').textContent = card.dataset.title;
+        document.getElementById('detailAuthor').textContent = card.dataset.author;
+        document.getElementById('detailGenre').textContent = card.querySelector('.cover-genre').textContent;
+        document.getElementById('detailId').textContent = `#${card.dataset.id}`;
+
+        const available = card.dataset.status === 'Available';
+        const status = document.getElementById('detailStatus');
+        status.textContent = card.dataset.status;
+        status.className = `detail-status ${available ? 'is-available' : 'is-unavailable'}`;
+
+        const borrowForm = document.getElementById('detailBorrowForm');
+        const requestForm = document.getElementById('detailRequestForm');
+        const pendingNote = document.getElementById('requestPendingNote');
+        if (borrowForm) {
+            borrowForm.hidden = !available;
+            document.getElementById('detailBookId').value = card.dataset.id;
+        }
+        if (requestForm) {
+            const requested = card.dataset.requested === 'true';
+            requestForm.hidden = available || requested;
+            document.getElementById('requestBookId').value = card.dataset.id;
+            pendingNote.hidden = available || !requested;
+        }
+    }
+
+    function filterBooks() {
+        const query = searchInput.value.trim().toLowerCase();
+        let visibleCards = 0;
+
+        bookCards.forEach((card) => {
+            const matchesSearch = card.dataset.search.includes(query);
+            const matchesGenre = selectedGenre === 'all' || card.dataset.genre === selectedGenre;
+            const visible = matchesSearch && matchesGenre;
+            card.hidden = !visible;
+            if (visible) visibleCards += 1;
+        });
+
+        resultCount.textContent = `${visibleCards} ${visibleCards === 1 ? 'book' : 'books'}`;
+        noResults.hidden = visibleCards !== 0;
+
+        const selectedCard = bookCards.find((card) => !card.hidden && card.classList.contains('selected'));
+        const firstVisible = bookCards.find((card) => !card.hidden);
+        if (!selectedCard && firstVisible) selectBook(firstVisible);
+    }
+
+    bookCards.forEach((card) => {
+        card.querySelector('[data-select-book]').addEventListener('click', () => selectBook(card));
+    });
+    genreFilters.forEach((button) => {
+        button.addEventListener('click', () => {
+            selectedGenre = button.dataset.genreFilter;
+            genreFilters.forEach((filter) => {
+                const active = filter === button;
+                filter.classList.toggle('active', active);
+                filter.setAttribute('aria-pressed', String(active));
+            });
+            filterBooks();
+        });
+    });
+    searchInput.addEventListener('input', filterBooks);
+</script>
+{% endblock %}

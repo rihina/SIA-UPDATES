@@ -1,0 +1,41 @@
+{% extends 'InvApp/base.html' %}
+
+{% block title %}{{ page_title }} · E-Library{% endblock %}
+
+{% block content %}
+<header class="staff-dashboard-head">
+    <div>
+        <span class="eyebrow">MEMBER DIRECTORY</span>
+        <h1 class="lms-title">{{ page_title }}</h1>
+        <p class="lms-subtitle">Library accounts and current borrowing activity.</p>
+    </div>
+</header>
+
+<nav class="member-filter" aria-label="Filter member type">
+    <a href="{% url 'staff_members' %}?role=student" class="{% if selected_role == 'student' %}active{% endif %}">Students</a>
+    <a href="{% url 'staff_members' %}?role=teacher" class="{% if selected_role == 'teacher' %}active{% endif %}">Teachers</a>
+    <a href="{% url 'staff_members' %}?role=staff" class="{% if selected_role == 'staff' %}active{% endif %}">Staff</a>
+</nav>
+
+<section class="lms-card member-directory">
+    <div class="card-title">{{ page_title }} <span class="badge-pill badge-violet ms-auto">{{ members|length }}</span></div>
+    <div class="table-wrap">
+        <table class="lms-table">
+            <thead><tr><th>Name</th><th>Email</th><th>Active loans</th><th>Status</th><th>Joined</th></tr></thead>
+            <tbody>
+                {% for member in members %}
+                <tr>
+                    <td><strong>{{ member.get_full_name|default:member.username }}</strong>{% if member.get_full_name %}<br><small>@{{ member.username }}</small>{% endif %}</td>
+                    <td>{{ member.email|default:'-' }}</td>
+                    <td>{{ member.active_loans }}</td>
+                    <td>{% if member.is_active %}<span class="badge-pill badge-available">Active</span>{% else %}<span class="badge-pill badge-overdue">Inactive</span>{% endif %}</td>
+                    <td>{{ member.date_joined|date:"M d, Y" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="empty-state">No {{ page_title|lower }} found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

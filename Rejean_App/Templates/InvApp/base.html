@@ -1,0 +1,148 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Library Management{% endblock %}</title>
+    <link href="{% static 'InvApp/theme.css' %}?v=auth-pink-2" rel="stylesheet">
+</head>
+
+<body class="lms-body{% if request.resolver_match.url_name == 'login' or request.resolver_match.url_name == 'staff_login' or request.resolver_match.url_name == 'register' %} auth-page{% endif %}">
+    {% if user.is_authenticated %}
+    <div class="app-shell">
+        <aside class="app-sidebar">
+            <a class="app-brand" href="{% url 'book_list' %}">
+                <img src="{% static 'CCTC_logo.png' %}" alt="" class="brand-logo">
+                <span>E-Library</span>
+            </a>
+
+            <span class="sidebar-label">LIBRARY</span>
+            <nav class="sidebar-links" aria-label="Library navigation">
+                {% if user.is_staff_role %}
+                <a href="{% url 'staff_dashboard' %}" class="{% if request.resolver_match.url_name == 'staff_dashboard' %}active{% endif %}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Dashboard</span>
+                </a>
+                <a href="{% url 'staff_profile' %}" class="{% if request.resolver_match.url_name == 'staff_profile' %}active{% endif %}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M5 21a7 7 0 0 1 14 0"/></svg><span>Profile</span>
+                </a>
+                <a href="{% url 'staff_members' %}?role=student" class="{% if request.resolver_match.url_name == 'staff_members' and request.GET.role == 'student' %}active{% endif %}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M20 8v6M17 11h6"/></svg><span>All Student Information</span>
+                </a>
+                <a href="{% url 'staff_members' %}?role=teacher" class="{% if request.resolver_match.url_name == 'staff_members' and request.GET.role == 'teacher' %}active{% endif %}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-8h6v8"/><path d="M9 8h.01M15 8h.01"/></svg><span>All Teacher Information</span>
+                </a>
+                <details class="sidebar-group" {% if request.resolver_match.url_name == 'book_list' %}open{% endif %}>
+                    <summary><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/><path d="M8 7h8M8 11h8"/></svg><span>Manage Book</span><span class="sidebar-chevron" aria-hidden="true"></span></summary>
+                    <div class="sidebar-submenu">
+                        <a href="{% url 'book_list' %}">All Books</a>
+                        <a href="{% url 'book_list' %}?add=1">Add Book</a>
+                    </div>
+                </details>
+                <details class="sidebar-group" {% if request.resolver_match.url_name == 'staff_issue' %}open{% endif %}>
+                    <summary><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/><path d="M12 7v6M9 10h6"/></svg><span>Issue Book</span><span class="sidebar-chevron" aria-hidden="true"></span></summary>
+                    <div class="sidebar-submenu">
+                        <a href="{% url 'staff_issue' %}">Issue to Member</a>
+                        <a href="{% url 'staff_dashboard' %}#active-loans">Return Book</a>
+                        <a href="{% url 'staff_dashboard' %}#active-loans">Issued Books</a>
+                    </div>
+                </details>
+                <a href="{% url 'staff_requests' %}" class="{% if request.resolver_match.url_name == 'staff_requests' %}active{% endif %}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a2 2 0 0 1 2 2v16l-4-2-4 2-4-2-4 2V5a2 2 0 0 1 2-2Z"/><path d="M8 8h8M8 12h8M8 16h4"/></svg><span>View Requested Books</span>
+                </a>
+                <details class="sidebar-group" {% if request.resolver_match.url_name == 'staff_members' and request.GET.role == 'staff' %}open{% endif %}>
+                    <summary><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Manage Users</span><span class="sidebar-chevron" aria-hidden="true"></span></summary>
+                    <div class="sidebar-submenu">
+                        <a href="{% url 'staff_members' %}?role=student">Students</a>
+                        <a href="{% url 'staff_members' %}?role=teacher">Teachers</a>
+                        <a href="{% url 'staff_members' %}?role=staff">Staff accounts</a>
+                    </div>
+                </details>
+                <a href="{% url 'staff_send_message' %}" class="{% if request.resolver_match.url_name == 'staff_send_message' %}active{% endif %}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v12H8l-4 4V5Z"/><path d="M8 9h8M8 13h5"/></svg><span>Send Message To User</span>
+                </a>
+                <a href="{% url 'staff_dashboard' %}#reports">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg><span>Reports</span>
+                </a>
+                {% else %}
+                <a href="{% url 'book_list' %}" class="{% if request.resolver_match.url_name == 'book_list' %}active{% endif %}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7v14"/><path d="M3 18V5a2 2 0 0 1 2-2h4a3 3 0 0 1 3 3 3 3 0 0 1 3-3h4a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2h-5a2 2 0 0 0-2 2 2 2 0 0 0-2-2H5a2 2 0 0 1-2-2Z"/></svg><span>Catalog</span>
+                </a>
+                <a href="{% url 'my_books' %}" class="{% if request.resolver_match.url_name == 'my_books' %}active{% endif %}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/><path d="M8 7h8M8 11h6"/></svg><span>My Library</span>
+                </a>
+                <a href="{% url 'my_requests' %}" class="{% if request.resolver_match.url_name == 'my_requests' %}active{% endif %}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a2 2 0 0 1 2 2v16l-4-2-4 2-4-2-4 2V5a2 2 0 0 1 2-2Z"/><path d="M8 8h8M8 12h8"/></svg><span>My Requests</span>
+                </a>
+                <a href="{% url 'user_messages' %}" class="{% if request.resolver_match.url_name == 'user_messages' %}active{% endif %}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v12H8l-4 4V5Z"/><path d="M8 9h8M8 13h5"/></svg><span>Messages</span>
+                </a>
+                {% endif %}
+            </nav>
+
+            <div class="sidebar-account">
+                <span class="account-name">{{ user.get_full_name|default:user.username }}</span>
+                <span class="account-role">{{ user.account_role_display }}</span>
+                <form method="POST" action="{% if user.is_staff_role %}{% url 'staff_logout' %}{% else %}{% url 'logout' %}{% endif %}">
+                    {% csrf_token %}
+                    <button type="submit" class="sidebar-logout">Log out</button>
+                </form>
+            </div>
+        </aside>
+
+        <div class="app-main">
+            <header class="app-topbar">
+                {% block topbar %}<span class="topbar-label">Library</span>{% endblock %}
+            </header>
+    {% else %}
+    <nav class="lms-nav">
+        <a class="lms-brand" href="{% url 'book_list' %}">
+            <img src="{% static 'CCTC_logo.png' %}" alt="CCTC Logo" class="brand-logo">
+            E-Library
+        </a>
+
+        <div class="lms-links">
+            {% if user.is_authenticated %}
+            <a href="{% url 'book_list' %}" class="{% if request.resolver_match.url_name == 'book_list' %}active{% endif %}">Catalog</a>
+
+            {% if user.is_staff_role %}
+            <a href="{% url 'staff_dashboard' %}" class="{% if request.resolver_match.url_name == 'staff_dashboard' %}active{% endif %}">Transactions</a>
+            {% else %}
+            <a href="{% url 'my_books' %}" class="{% if request.resolver_match.url_name == 'my_books' %}active{% endif %}">My Borrowed Books</a>
+            {% endif %}
+
+            <span class="who">{{ user.get_full_name|default:user.username }} · {{ user.account_role_display }}</span>
+
+            <form method="POST" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn-pill btn-sm btn-soft">Log out</button>
+            </form>
+            {% else %}
+            <a href="{% url 'login' %}">Login</a>
+            <a href="{% url 'register' %}">Register</a>
+            {% endif %}
+        </div>
+    </nav>
+    {% endif %}
+
+    <main class="lms-container">
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert-lms alert-{% if message.tags == 'error' %}error{% elif message.tags == 'info' %}info{% else %}success{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
+
+    {% if user.is_authenticated %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

@@ -1,0 +1,29 @@
+{% extends 'InvApp/base.html' %}
+
+{% block title %}Send Message · E-Library{% endblock %}
+
+{% block content %}
+<header class="staff-dashboard-head">
+    <div>
+        <span class="eyebrow">MEMBER COMMUNICATION</span>
+        <h1 class="lms-title">Send message to user</h1>
+        <p class="lms-subtitle">Send a direct library update to a student or teacher.</p>
+    </div>
+</header>
+
+<section class="lms-card issue-book-panel message-compose-panel">
+    <form method="POST">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="form-field">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% for error in field.errors %}<ul class="error-list"><li>{{ error }}</li></ul>{% endfor %}
+        </div>
+        {% endfor %}
+        <div class="book-form-actions">
+            <button type="submit" class="btn-pill">Send message</button>
+        </div>
+    </form>
+</section>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends 'InvApp/base.html' %}
+
+{% block title %}Profile · E-Library{% endblock %}
+
+{% block content %}
+<header class="staff-dashboard-head">
+    <div>
+        <span class="eyebrow">ACCOUNT</span>
+        <h1 class="lms-title">Profile</h1>
+        <p class="lms-subtitle">Your library staff account details.</p>
+    </div>
+</header>
+
+<section class="lms-card profile-panel">
+    <div class="profile-identity">
+        <span class="profile-monogram">{{ request.user.get_full_name|default:request.user.username|first|upper }}</span>
+        <div>
+            <h2>{{ request.user.get_full_name|default:request.user.username }}</h2>
+            <p>{{ request.user.account_role_display }}</p>
+        </div>
+    </div>
+    <dl class="profile-details">
+        <div><dt>Username</dt><dd>{{ request.user.username }}</dd></div>
+        <div><dt>Email</dt><dd>{{ request.user.email|default:'Not provided' }}</dd></div>
+        <div><dt>Account created</dt><dd>{{ request.user.date_joined|date:"M d, Y" }}</dd></div>
+        <div><dt>Account status</dt><dd>{% if request.user.is_active %}Active{% else %}Inactive{% endif %}</dd></div>
+    </dl>
+</section>
+{% endblock %}

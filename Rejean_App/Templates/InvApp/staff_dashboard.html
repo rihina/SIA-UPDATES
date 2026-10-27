@@ -1,0 +1,177 @@
+{% extends 'InvApp/base.html' %}
+
+{% block title %}Staff Dashboard · E-Library{% endblock %}
+
+{% block content %}
+<div class="staff-workspace">
+    <header class="staff-dashboard-head">
+        <div>
+            <span class="eyebrow">LIBRARY OPERATIONS</span>
+            <h1 class="lms-title">Staff dashboard</h1>
+            <p class="lms-subtitle">Welcome back, {{ request.user.get_full_name|default:request.user.username }}. Here's your library overview.</p>
+        </div>
+        <a class="btn-pill dashboard-primary-action" href="{% url 'staff_issue' %}">Issue a book</a>
+    </header>
+
+    <section id="reports" class="dashboard-stats" aria-label="Library overview">
+        <article class="dashboard-stat stat-books">
+            <span>Total books</span>
+            <strong>{{ total_books }}</strong>
+            <small>{{ available_books }} currently available</small>
+        </article>
+        <article class="dashboard-stat stat-members">
+            <span>Active members</span>
+            <strong>{{ active_members }}</strong>
+            <small>Students and teachers</small>
+        </article>
+        <article class="dashboard-stat stat-loans">
+            <span>Books on loan</span>
+            <strong>{{ loan_count }}</strong>
+            <small>Not yet returned</small>
+        </article>
+        <article class="dashboard-stat stat-overdue">
+            <span>Overdue</span>
+            <strong>{{ overdue_count }}</strong>
+            <small>Past the due date</small>
+        </article>
+    </section>
+
+    <section class="staff-quick-actions" aria-label="Quick actions">
+        <a class="staff-action-card" href="{% url 'staff_issue' %}">
+            <span class="action-mark">+</span>
+            <span><strong>Issue book</strong><small>Record a new loan</small></span>
+        </a>
+        <a class="staff-action-card" href="#active-loans">
+            <span class="action-mark">&#8634;</span>
+            <span><strong>Return book</strong><small>Review and close loans</small></span>
+        </a>
+        <a class="staff-action-card" href="{% url 'book_list' %}?add=1">
+            <span class="action-mark">+</span>
+            <span><strong>Add book</strong><small>Add a title to the catalog</small></span>
+        </a>
+        <a class="staff-action-card" href="#reports">
+            <span class="action-mark">&#9636;</span>
+            <span><strong>Reports</strong><small>See library totals</small></span>
+        </a>
+    </section>
+
+    <div class="staff-overview-grid">
+        <section id="members" class="lms-card staff-overview-card">
+            <div class="card-title">Members <span class="badge-pill badge-violet ms-auto">{{ active_members }}</span></div>
+            <div class="table-wrap">
+                <table class="lms-table">
+                    <thead><tr><th>Name</th><th>Role</th><th>Joined</th></tr></thead>
+                    <tbody>
+                        {% for member in members %}
+                        <tr>
+                            <td><strong>{{ member.get_full_name|default:member.username }}</strong></td>
+                            <td>{{ member.account_role_display }}</td>
+                            <td>{{ member.date_joined|date:"M d, Y" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="empty-state">No active members yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="lms-card staff-overview-card">
+            <div class="card-title">Recent books <a class="dashboard-text-link ms-auto" href="{% url 'book_list' %}">View catalog</a></div>
+            <div class="recent-book-list">
+                {% for book in recent_books %}
+                <div class="recent-book-row">
+                    <span class="recent-book-mark">{{ forloop.counter|stringformat:"02d" }}</span>
+                    <span class="recent-book-copy"><strong>{{ book.book_name }}</strong><small>{{ book.author }} · {{ book.genre }}</small></span>
+                    <span class="book-status {% if book.is_available %}is-available{% else %}is-unavailable{% endif %}">{{ book.availability }}</span>
+                </div>
+                {% empty %}
+                <p class="empty-state">No books in the catalog.</p>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+
+    <section id="active-loans" class="lms-card dashboard-table-card">
+        <div class="card-title">Active loans <span class="badge-pill badge-violet ms-auto">{{ loan_count }}</span></div>
+
+    <div class="table-wrap">
+        <table class="lms-table">
+            <thead>
+                <tr>
+                    <th>Member</th>
+                    <th>Role</th>
+                    <th>Book</th>
+                    <th>Borrowed</th>
+                    <th>Due</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in active %}
+                <tr>
+                    <td><strong>{{ record.user.get_full_name|default:record.user.username }}</strong></td>
+                    <td><span class="badge-pill badge-violet">{{ record.user.account_role_display }}</span></td>
+                    <td>{{ record.book.book_name }}</td>
+                    <td>{{ record.borrowed_at|date:"M d, Y h:i A" }}</td>
+                    <td>{{ record.due_by|date:"M d, Y h:i A" }}</td>
+                    <td>
+                        {% if record.is_overdue %}
+                        <span class="badge-pill badge-overdue">Overdue</span>
+                        {% else %}
+                        <span class="badge-pill badge-available">On loan</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form method="POST" action="{% url 'return_book' %}" style="display:inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="record_id" value="{{ record.pk }}">
+                            <button type="submit" class="btn-pill btn-sm btn-pink">Return</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="empty-state">No books are currently on loan.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    </section>
+
+    <section id="completed-loans" class="lms-card dashboard-table-card">
+    <div class="card-title">Completed Transactions <span class="badge-pill badge-violet ms-auto">{{ returned|length }}</span></div>
+
+    <div class="table-wrap">
+        <table class="lms-table">
+            <thead>
+                <tr>
+                    <th>Member</th>
+                    <th>Book</th>
+                    <th>Borrowed At</th>
+                    <th>Due By</th>
+                    <th>Returned At</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in returned %}
+                <tr>
+                    <td><strong>{{ record.user.get_full_name|default:record.user.username }}</strong></td>
+                    <td>{{ record.book.book_name }}</td>
+                    <td>{{ record.borrowed_at|date:"M d, Y h:i A" }}</td>
+                    <td>{{ record.due_by|date:"M d, Y h:i A" }}</td>
+                    <td><span class="badge-pill badge-available">{{ record.returned_at|date:"M d, Y h:i A" }}</span></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="empty-state">No completed transactions yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+</div>
+{% endblock %}
